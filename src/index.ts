@@ -1,13 +1,19 @@
 import os from 'os';
 
+type LogEntry = {
+    moment: Date;
+    message: string;
+}
+
 interface Logging {
-    toLogEntry(): string
+    toLogEntry(): LogEntry
 }
 
 function logInMemoryObjects(...objs: Array<Logging>) {
     console.log('----------');
     const log = objs
         .map(x => x.toLogEntry())
+        .map(x => `[${x.moment}] ${x.message}`)
         .join(os.EOL);
     console.log(log);
 }
@@ -59,8 +65,11 @@ function withLogging<C extends BankAccountConstructor<BankAccount>>(Class: C) {
         constructor(...args: any[]) {
             super(...args);
         }
-        toLogEntry(): string {
-            return this.toString();
+        toLogEntry(): LogEntry {
+            return {
+                moment: new Date(Date.now()),
+                message: this.toString()
+            }
         }
     }
 }

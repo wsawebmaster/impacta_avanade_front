@@ -12,16 +12,19 @@ function logInMemoryObjects(...objs: Array<Logging>) {
     console.log(log);
 }
 
-class BankAccount implements Logging {
+function extractConstructorName(obj: any) {
+    if (obj.__proto__.constructor.name) return obj?.__proto__.constructor.name;
+    if (obj.__proto__) return extractConstructorName(obj.__proto__);
+    return null;
+}
+
+class BankAccount {
     accNumber: number;
     funds: number;
 
     constructor(accNumber: number, initialFunds?: number) {
         this.accNumber = accNumber;
         this.funds = initialFunds ?? 0;
-    }
-    toLogEntry(): string {
-        return this.toString();
     }
 
     deposit(value: number) {
@@ -33,7 +36,7 @@ class BankAccount implements Logging {
     }
 
     toString() {
-        return `account: [${this.accNumber}] : $[${this.funds}]`
+        return `account: [${this.accNumber}](${extractConstructorName(this)}) : $[${this.funds}]`
     }
 }
 
@@ -51,10 +54,21 @@ function withOverdraft<C extends BankAccountConstructor<BankAccount>>(Class: C) 
     }
 }
 
+function withLogging<C extends BankAccountConstructor<BankAccount>>(Class: C) {
+    return class extends Class implements Logging {
+        constructor(...args: any[]) {
+            super(...args);
+        }
+        toLogEntry(): string {
+            return this.toString();
+        }
+    }
+}
+
 // abstract class CheckingBankAccount extends BankAccount {
 // }
 
-class SavingBankAccount extends BankAccount {
+class SavingsBankAccount extends BankAccount {
     withdraw(value: number): boolean {
         if (this.funds < value) {
             console.log('insufficient funds');
@@ -66,11 +80,12 @@ class SavingBankAccount extends BankAccount {
     }
 }
 
-const CheckingBankAccount = withOverdraft(BankAccount);
+const CheckingBankAccount = withLogging(withOverdraft(BankAccount));
+const SavingsBankAccountWithLogging = withLogging(SavingsBankAccount)
 
 function main() {
     const a1 = new CheckingBankAccount(1, 10);
-    const a2 = new SavingBankAccount(2);
+    const a2 = new SavingsBankAccountWithLogging(2);
     const a3 = new CheckingBankAccount(3, 20);
 
     a1.withdraw(10);

@@ -1,19 +1,27 @@
 import os from 'os';
 
-function logInMemoryAccounts(a1: BankAccount, a2: BankAccount, a3: BankAccount) {
-    console.log('----------');
-    console.log(a1.toString(), os.EOL, a2.toString(), os.EOL, a3.toString())
+interface Logging {
+    toLogEntry(): string
 }
 
-class BankAccount {
-    accType: string;
+function logInMemoryObjects(...objs: Array<Logging>) {
+    console.log('----------');
+    const log = objs
+        .map(x => x.toLogEntry())
+        .join(os.EOL);
+    console.log(log);
+}
+
+class BankAccount implements Logging {
     accNumber: number;
     funds: number;
 
-    constructor(accType: 'SAVINGS' | 'CHECKING', accNumber: number, initialFunds?: number) {
-        this.accType = accType;
+    constructor(accNumber: number, initialFunds?: number) {
         this.accNumber = accNumber;
         this.funds = initialFunds ?? 0;
+    }
+    toLogEntry(): string {
+        return this.toString();
     }
 
     deposit(value: number) {
@@ -21,12 +29,7 @@ class BankAccount {
     }
 
     withdraw(value: number): boolean {
-        if (this.accType == 'SAVINGS' && this.funds < value) {
-            console.log('insufficient funds');
-            return false;
-        }
-        this.funds -= value;
-        return true;
+        throw Error("Not implemented...");
     }
 
     toString() {
@@ -34,16 +37,47 @@ class BankAccount {
     }
 }
 
+type BankAccountConstructor<T> = new(...args: any[]) => T;
+function withOverdraft<C extends BankAccountConstructor<BankAccount>>(Class: C) {
+    return class extends Class {
+        constructor(...args: any[]) {
+            super(...args);
+        }
+
+        withdraw(value: number): boolean {
+            this.funds -= value;
+            return true;
+        }
+    }
+}
+
+// abstract class CheckingBankAccount extends BankAccount {
+// }
+
+class SavingBankAccount extends BankAccount {
+    withdraw(value: number): boolean {
+        if (this.funds < value) {
+            console.log('insufficient funds');
+            return false;
+        }
+
+        this.funds -= value;
+        return true;
+    }
+}
+
+const CheckingBankAccount = withOverdraft(BankAccount);
+
 function main() {
-    const a1 = new BankAccount('CHECKING', 1, 10);
-    const a2 = new BankAccount('SAVINGS', 2);
-    const a3 = new BankAccount('CHECKING', 3, 20);
+    const a1 = new CheckingBankAccount(1, 10);
+    const a2 = new SavingBankAccount(2);
+    const a3 = new CheckingBankAccount(3, 20);
 
     a1.withdraw(10);
     a2.withdraw(10);
     a3.withdraw(30);
 
-    logInMemoryAccounts(a1, a2, a3);
+    logInMemoryObjects(a1, a2, a3);
 }
 
 main();

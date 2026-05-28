@@ -1,18 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-class BankAccount {
-    constructor(accNumber, initialFunds) {
-        this.accNumber = accNumber;
-        this.funds = initialFunds !== null && initialFunds !== void 0 ? initialFunds : 0;
-    }
-}
+const bank_extensions_1 = require("./domain/models/bank.extensions");
+const logging_1 = require("./shared/logging");
 function main() {
-    const a1 = new BankAccount(1, 10);
-    const a2 = new BankAccount(2, 0);
-    const a3 = new BankAccount(3, 20);
-    console.log(a1);
-    console.log(a2);
-    console.log(a3);
+    const a1 = new bank_extensions_1.CheckingBankAccount(1, 10);
+    const a2 = new bank_extensions_1.SavingsBankAccountWithLogging(2);
+    const a3 = new bank_extensions_1.CheckingBankAccount(3, 20);
+    a1.withdraw(10);
+    a2.withdraw(10);
+    a3.withdraw(30);
+    (0, logging_1.logInMemoryObjects)(a1, a2, a3);
 }
 main();
 //# sourceMappingURL=index.js.map

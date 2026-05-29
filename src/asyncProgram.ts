@@ -1,7 +1,17 @@
-import { readFile } from "fs";
+import { createReadStream } from "fs";
 
-function log(msg: string) {
-    console.log(msg, new Date(Date.now()));
+function log(msg: string, buffer: Array<string> | null = null) {
+    const _msg = `${msg} - ${new Date(Date.now())}`;
+    if (buffer) {
+        buffer.push(_msg);
+        if(buffer.length > 1000) {
+            log('Buffer atingiu o limite ...');
+            log('_msg');
+            buffer.length = 0;
+        }
+    } else {
+        console.log(_msg);
+    }
 }
 
 setImmediate(() => log('e'));
@@ -23,4 +33,12 @@ log('Lendo arquivo grande...');
     //         log(`data.length: ${data.length}`);
     //     });
     
+    const bufferStr: Array<string> = [];
+    const readStream = createReadStream('./theFile.txt', 'utf-8');
+    readStream.on('data', st => log(`data.length: ${st.length}, bufferStr`));
+    readStream.on('end', () => {
+        log('Fechando stream...');
+        readStream.close();
+    });
+
     setTimeout(() => log('Leitura de arquivo grande finalizada'), 7000)
